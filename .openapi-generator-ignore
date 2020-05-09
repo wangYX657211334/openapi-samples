@@ -1,0 +1,36 @@
+build/publications
+**/*Controller.java
+**/ApiResponseMessage.java
+**/ApiOriginFilter.java
+**/ApiException.java
+**/NotFoundException.java
+src/main/resources/**
+README.md
+pom.xml
+
+.gitignore
+
+#created during restemplate library generation
+docs/*.md
+.travis.yml
+build.sbt
+git_push.sh
+
+src/main/AndroidManifest.xml
+src/test/**
+
+#do not overwrite gradlew
+gradle/wrapper/**
+gradlew*
+build.gradle
+settings.gradle
+gradle.properties
+mocha.opts
+
+**/OpenAPI2SpringBoot.java
+**/swagger/HomeController.java
+**/swagger/SwaggerDocumentationConfig.java
+
+*.json
+test/**
+.babelrc

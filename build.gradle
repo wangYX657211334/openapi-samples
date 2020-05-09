@@ -1,0 +1,115 @@
+
+buildscript {
+	repositories {
+		mavenLocal()
+		maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+	}
+}
+
+plugins {
+	id 'org.springframework.boot' version '2.2.6.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'org.openapi.generator' version '4.3.1'
+	id 'java'
+}
+
+group = 'com.wangyux.openapi.samples'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+sourceSets{
+	main {
+		java {
+			srcDirs = ['src/main/java', javaGeneratedDir]
+		}
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenLocal()
+	maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	compile 'org.openapitools:jackson-databind-nullable:0.2.1'
+	compile 'org.springdoc:springdoc-openapi-webflux-ui:1.3.9'
+	compile 'io.springfox:springfox-swagger2:2.9.2'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+	testImplementation 'io.projectreactor:reactor-test'
+}
+
+task javaServerOpenApiGenerate(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = "spring"
+	inputSpec = "$rootDir/api/openapi.yaml".toString()
+	outputDir = "$rootDir".toString()
+	apiPackage = "${rootProject.ext.javaPackageName}.rest.interfaces"
+	invokerPackage = "${rootProject.ext.javaPackageName}.rest"
+	modelPackage = "${rootProject.ext.javaPackageName}.model"
+	configOptions = [
+			dateLibrary: "java8-localdatetime"
+			, hideGenerationTimestamp: "true"
+			, configPackage: rootProject.ext.javaPackageName
+			, sourceFolder: rootProject.ext.javaGeneratedDir
+			, java8: "true"
+			, reactive: "true"
+	]
+}
+task javaClientOpenApiGenerate(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = "java"
+	inputSpec = "$rootDir/api/openapi.yaml".toString()
+	outputDir = "$rootDir".toString()
+	apiPackage = "${rootProject.ext.javaPackageName}.client.api"
+	invokerPackage = "${rootProject.ext.javaPackageName}.client"
+	modelPackage = "${rootProject.ext.javaPackageName}.model"
+	configOptions = [
+			dateLibrary: "java8-localdatetime"
+			, java8: "true"
+			, library: "webclient"
+			, sourceFolder: rootProject.ext.javaGeneratedDir
+	]
+}
+task jsClientOpenApiGenerate(type: org.openapitools.generator.gradle.plugin.tasks.GenerateTask) {
+	generatorName = "javascript"
+	inputSpec = "$rootDir/api/openapi.yaml".toString()
+	outputDir = "$rootDir".toString()
+	apiPackage = "api"
+	invokerPackage = "interface"
+	modelPackage = "model"
+	templateDir = "$rootDir/template/Javascript/es6"
+	configOptions = [
+			sourceFolder: rootProject.ext.jsGeneratedDir
+	]
+}
+task customOpenApiGenerate(dependsOn: ['javaServerOpenApiGenerate', 'javaClientOpenApiGenerate', 'jsClientOpenApiGenerate'])
+compileJava.dependsOn tasks.customOpenApiGenerate
+
+openApiValidate {
+	inputSpec = "$rootDir/api/openapi.yaml".toString()
+	recommend = true
+}
+compileJava.dependsOn tasks.openApiValidate
+
+task deleteGenerate(type: Delete){
+	FileTree tree = fileTree(dir: "$rootDir/$rootProject.ext.jsGeneratedDir")
+	tree.each {File file ->
+		delete file
+	}
+}
+clean.dependsOn tasks.deleteGenerate
+
+test {
+	useJUnitPlatform()
+}
